@@ -1,5 +1,6 @@
 ﻿using SwissILKnife;
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -11,7 +12,6 @@ namespace PropertyHacker
 
 		// https://stackoverflow.com/a/672212/3780113
 
-		// gets the field/property
 		public static MemberInfo GetMemberInfo<TSource, TProperty>(this Expression<Func<TSource, TProperty>> propertyLambda)
 		{
 			var type = typeof(TSource);
@@ -25,16 +25,27 @@ namespace PropertyHacker
 				!type.IsSubclassOf(member.ReflectedType))
 				throw new ArgumentException($"Expression '{propertyLambda.ToString()}' refers to a member that is not from type {type}.");
 
+			// either a property or field
 			return member;
 		}
 	}
 
 	/// <summary>Allows you to "mod"ify properties</summary>
 	/// <remarks>puns (:</remarks>
-	public static class Modder
+	public class Modder
 	{
+		public Modder(params Func<string, string>[] stringTransformers)
+		{
+			_stringTransformers = stringTransformers;
+		}
+
+		private Func<string, string>[] _stringTransformers;
+
 		// the name of an auto property's field that the compiler generates
 		public const string DefaultBackingfieldName = "<{0}>k__BackingField";
+
+		public static Func<string, string> DefaultTransformer = (name) => string.Format(DefaultBackingfieldName, name);
+		public static Modder Default = new Modder(DefaultTransformer);
 
 		/// <summary>Tries to get an EasyField from a field/property</summary>
 		/// <typeparam name="TSource">The type of the source</typeparam>
@@ -45,41 +56,71 @@ namespace PropertyHacker
 		/// <exception cref="System.ArgumentException">Expression '<paramref name="propertyLambda"/>' refers to a member that is not from the type <typeparamref name="TSource"/></exception>
 		/// <exception cref="System.ArgumentException">member</exception>
 		/// <returns>If it could find a field to use</returns>
-		public static bool TryGet<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda, out EasyField<TSource, TProperty> easyField)
-			=> TryGet(propertyLambda.GetMemberInfo(), out easyField);
-
-		/// <summary>Tries to get an EasyField from a field/property</summary>
-		/// <typeparam name="TSource">The type of the source</typeparam>
-		/// <typeparam name="TProperty">The type of the property</typeparam>
-		/// <param name="member">The <see cref="MemberInfo"/> to use (must be a <see cref="FieldInfo"/> or a <see cref="PropertyInfo"/></param>
-		/// <param name="easyField">The easy field</param>
-		/// <returns>If it could find a field to use</returns>
-		/// <exception cref="System.ArgumentException">member</exception>
-		public static bool TryGet<TSource, TProperty>(MemberInfo member, out EasyField<TSource, TProperty> easyField)
+		public bool TryGet<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda, out EasyField<TSource, TProperty> easyField)
 		{
-			if (member is FieldInfo field)
+			var member = propertyLambda.GetMemberInfo();
+
+			if (member is PropertyInfo propertyInfo)
 			{
-				easyField = new EasyField<TSource, TProperty>(field);
+				return TryGet(propertyInfo, out easyField);
+			}
+			else if (member is FieldInfo fieldInfo)
+			{
+				easyField = new EasyField<TSource, TProperty>(fieldInfo);
 				return true;
 			}
 
-			if (!(member is PropertyInfo property))
+			// this shouldn't happen...
+			throw new Exception($"Unsupported item");
+		}
+
+		/// <summary>Tries to get an EasyField from the backing of a property</summary>
+		/// <typeparam name="TSource">The type of the source</typeparam>
+		/// <typeparam name="TProperty">The type of the property</typeparam>
+		/// <param name="property">The <see cref="MemberInfo"/> to use (must be a <see cref="FieldInfo"/> or a <see cref="PropertyInfo"/></param>
+		/// <param name="easyField">The easy field</param>
+		/// <returns>If it could find a field to use</returns>
+		/// <exception cref="System.ArgumentException">member</exception>
+		public bool TryGet<TSource, TProperty>(PropertyInfo property, out EasyField<TSource, TProperty> easyField)
+		{
+			var res = TryGet(property, out EasyField ef);
+
+			if (ef == default)
 			{
-				throw new ArgumentException(nameof(member));
+				easyField = default;
+				return res;
 			}
 
+			easyField = new EasyField<TSource, TProperty>(ef.Field);
+
+			return res;
+		}
+
+		/// <summary>Tries the get an EasyField from the backing of a property</summary>
+		/// <param name="property">The property</param>
+		/// <param name="easyField">The easy field</param>
+		/// <returns>If it could find a field to use</returns>
+		public bool TryGet(PropertyInfo property, out EasyField easyField)
+		{
 			// TODO: make it easier to search for different strings
 			var members = property.DeclaringType
 				.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
 
-			var search = string.Format(DefaultBackingfieldName, property.Name);
+			var name = property.Name;
+
+			var search = new string[_stringTransformers.Length];
+
+			for (var i = 0; i < _stringTransformers.Length; i++)
+			{
+				search[i] = _stringTransformers[i](name);
+			}
 
 			foreach (var i in members)
 			{
-				if (i.Name == search &&
-					i is FieldInfo fieldInfo)
+				if (search.Contains(i.Name) &&
+					i is FieldInfo field)
 				{
-					easyField = new EasyField<TSource, TProperty>(fieldInfo);
+					easyField = new EasyField(field);
 					return true;
 				}
 			}
@@ -92,7 +133,7 @@ namespace PropertyHacker
 	public delegate void Set(object instance, object value);
 	public delegate object Get(object instance);
 
-	/// <summary>Allows for easy manipualtion of a field</summary>
+	/// <summary>Allows for easy manipulation of a field</summary>
 	public class EasyField
 	{
 		public EasyField(FieldInfo field)

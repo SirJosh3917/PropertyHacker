@@ -12,6 +12,9 @@ namespace PropertyHacker.Tests
 			public string GetOnly { get; }
 			public string SetOnly { private get; set; }
 
+			private string _customBacking;
+			public string CustomBacking { get => _customBacking; set => _customBacking = value; }
+
 			public string SetOnlyValue() => SetOnly;
 		}
 
@@ -19,9 +22,37 @@ namespace PropertyHacker.Tests
 		public const string StringValue = "test";
 
 		[Fact]
+		public void FindsCustomBacking()
+		{
+			var modder = new Modder(Modder.DefaultTransformer, (n) =>
+			{
+				// don't copy and paste into your own code if you are reading this please
+				var piece = n.Substring(0, 1).ToLower();
+				return $"_{piece}{n.Substring(1)}";
+			});
+
+			modder.TryGet<ExampleClass, string>(e => e.CustomBacking, out var ef)
+				.Should().BeTrue();
+
+			var ec = new ExampleClass();
+
+			ec.CustomBacking
+				.Should().BeNull();
+
+			const string value = "test";
+
+			ef.Set(ec, value);
+			ef.Get(ec)
+				.Should().Be(value);
+
+			ec.CustomBacking
+				.Should().Be(value);
+		}
+
+		[Fact]
 		public void GetsAndSetGetSet()
 		{
-			Modder.TryGet(e => e.GetSet, out var myProp)
+			Modder.Default.TryGet<ExampleClass, string>(e => e.GetSet, out var myProp)
 							.Should().BeTrue();
 
 			myProp.Set(Instance, StringValue);
@@ -36,7 +67,7 @@ namespace PropertyHacker.Tests
 		[Fact]
 		public void GetsAndSetsGetOnly()
 		{
-			Modder.TryGet(e => e.GetOnly, out var myProp)
+			Modder.Default.TryGet<ExampleClass, string>(e => e.GetOnly, out var myProp)
 							.Should().BeTrue();
 
 			myProp.Set(Instance, StringValue);
@@ -51,7 +82,7 @@ namespace PropertyHacker.Tests
 		[Fact]
 		public void GetsAndSetsSetOnly()
 		{
-			Modder.TryGet(typeof(ExampleClass).GetProperty(nameof(ExampleClass.SetOnly)), out var myProp)
+			Modder.Default.TryGet<ExampleClass, string>(typeof(ExampleClass).GetProperty(nameof(ExampleClass.SetOnly)), out var myProp)
 										.Should().BeTrue();
 
 			myProp.Set(Instance, StringValue);
@@ -64,11 +95,21 @@ namespace PropertyHacker.Tests
 		}
 
 		[Fact]
+		public void DoesFail()
+		{
+			var failModder = new Modder((name) => "");
+			failModder.TryGet<ExampleClass, string>(e => e.GetOnly, out var ef)
+				.Should().BeFalse();
+
+			ef.Should().Be(default);
+		}
+
+		[Fact]
 		public void ReallyCanModifyAnything()
 		{
-			Modder.TryGet(e => e.GetSet, out var myProp)
+			Modder.Default.TryGet<ExampleClass, string>(e => e.GetSet, out var myProp)
 							.Should().BeTrue();
-			Modder.TryGet(e => e.Get, out var modifyEasyField)
+			Modder.Default.TryGet<EasyField<ExampleClass, string>, Get<ExampleClass, string>>(e => e.Get, out var modifyEasyField)
 							.Should().BeTrue();
 
 			myProp.Set(Instance, StringValue);
@@ -108,7 +149,7 @@ namespace PropertyHacker.Tests
 			{
 				var pr = new Modder();
 
-				if (!Modder.TryGet(e => e.ChangeMe, out var property))
+				if (!Modder.Default.TryGet<ForeignClass, string>(e => e.ChangeMe, out var property))
 				{
 					throw new ArgumentException("Can't modify the property.");
 				}
