@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2046
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PropertyHacker", "PropertyHacker\PropertyHacker.csproj", "{3670A3A2-72AE-4CB1-BCC3-7B5791B1DBF5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PropertyHacker.Tests", "PropertyHacker.Tests\PropertyHacker.Tests.csproj", "{15F0151F-D888-4F07-8BAE-95AB6C7C4D23}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3670A3A2-72AE-4CB1-BCC3-7B5791B1DBF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3670A3A2-72AE-4CB1-BCC3-7B5791B1DBF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3670A3A2-72AE-4CB1-BCC3-7B5791B1DBF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3670A3A2-72AE-4CB1-BCC3-7B5791B1DBF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15F0151F-D888-4F07-8BAE-95AB6C7C4D23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15F0151F-D888-4F07-8BAE-95AB6C7C4D23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15F0151F-D888-4F07-8BAE-95AB6C7C4D23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15F0151F-D888-4F07-8BAE-95AB6C7C4D23}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {309D098E-B2FF-4076-9AA2-300960FD1706}
+	EndGlobalSection
+EndGlobal
