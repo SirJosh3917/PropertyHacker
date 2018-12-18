@@ -21,8 +21,8 @@ namespace PropertyHacker.Tests
 		[Fact]
 		public void GetsAndSetGetSet()
 		{
-			Modder.Default.TryGet<ExampleClass, string>(e => e.GetSet, out var myProp)
-				.Should().BeTrue();
+			Modder.TryGet(e => e.GetSet, out var myProp)
+							.Should().BeTrue();
 
 			myProp.Set(Instance, StringValue);
 
@@ -36,8 +36,8 @@ namespace PropertyHacker.Tests
 		[Fact]
 		public void GetsAndSetsGetOnly()
 		{
-			Modder.Default.TryGet<ExampleClass, string>(e => e.GetOnly, out var myProp)
-				.Should().BeTrue();
+			Modder.TryGet(e => e.GetOnly, out var myProp)
+							.Should().BeTrue();
 
 			myProp.Set(Instance, StringValue);
 
@@ -51,9 +51,8 @@ namespace PropertyHacker.Tests
 		[Fact]
 		public void GetsAndSetsSetOnly()
 		{
-			Modder.Default.TryGet<ExampleClass, string>
-				(typeof(ExampleClass).GetProperty(nameof(ExampleClass.SetOnly)), out var myProp)
-				.Should().BeTrue();
+			Modder.TryGet(typeof(ExampleClass).GetProperty(nameof(ExampleClass.SetOnly)), out var myProp)
+										.Should().BeTrue();
 
 			myProp.Set(Instance, StringValue);
 
@@ -67,11 +66,10 @@ namespace PropertyHacker.Tests
 		[Fact]
 		public void ReallyCanModifyAnything()
 		{
-			Modder.Default.TryGet<ExampleClass, string>(e => e.GetSet, out var myProp)
-				.Should().BeTrue();
-			Modder.Default.TryGet<EasyField<ExampleClass, string>, Get<ExampleClass, string>>
-				(e => e.Get, out var modifyEasyField)
-				.Should().BeTrue();
+			Modder.TryGet(e => e.GetSet, out var myProp)
+							.Should().BeTrue();
+			Modder.TryGet(e => e.Get, out var modifyEasyField)
+							.Should().BeTrue();
 
 			myProp.Set(Instance, StringValue);
 			myProp.Get(Instance)
@@ -110,7 +108,7 @@ namespace PropertyHacker.Tests
 			{
 				var pr = new Modder();
 
-				if (!pr.TryGet<ForeignClass, string>(e => e.ChangeMe, out var property))
+				if (!Modder.TryGet(e => e.ChangeMe, out var property))
 				{
 					throw new ArgumentException("Can't modify the property.");
 				}

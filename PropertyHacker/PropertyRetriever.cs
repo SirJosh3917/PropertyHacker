@@ -11,6 +11,7 @@ namespace PropertyHacker
 
 		// https://stackoverflow.com/a/672212/3780113
 
+		// gets the field/property
 		public static MemberInfo GetMemberInfo<TSource, TProperty>(this Expression<Func<TSource, TProperty>> propertyLambda)
 		{
 			var type = typeof(TSource);
@@ -28,25 +29,16 @@ namespace PropertyHacker
 		}
 	}
 
-	public class Modder
+	public static class Modder
 	{
 		// the name of an auto property's field that the compiler generates
 		public const string DefaultBackingfieldName = "<{0}>k__BackingField";
 
-		public static readonly Modder Default = new Modder();
-
-		public Modder()
-		{
-		}
-
-		// allows for Get(e => e.X);
-		public bool TryGet<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda, out EasyField<TSource, TProperty> easyField)
+		public static bool TryGet<TSource, TProperty>(Expression<Func<TSource, TProperty>> propertyLambda, out EasyField<TSource, TProperty> easyField)
 			=> TryGet(propertyLambda.GetMemberInfo(), out easyField);
 
-		// more extensible as to be able to use reflection
-		public bool TryGet<TSource, TProperty>(MemberInfo member, out EasyField<TSource, TProperty> easyField)
+		public static bool TryGet<TSource, TProperty>(MemberInfo member, out EasyField<TSource, TProperty> easyField)
 		{
-			// fields don't need anything done to them
 			if (member is FieldInfo field)
 			{
 				easyField = new EasyField<TSource, TProperty>(field);
@@ -55,7 +47,6 @@ namespace PropertyHacker
 
 			if (!(member is PropertyInfo property))
 			{
-				// if it's not a prop/field :(
 				throw new ArgumentException(nameof(member));
 			}
 
@@ -70,7 +61,6 @@ namespace PropertyHacker
 				if (i.Name == search &&
 					i is FieldInfo fieldInfo)
 				{
-					// found the auto's field
 					easyField = new EasyField<TSource, TProperty>(fieldInfo);
 					return true;
 				}
@@ -83,9 +73,6 @@ namespace PropertyHacker
 
 	public delegate void Set(object instance, object value);
 	public delegate object Get(object instance);
-
-	public delegate void Set<TSource, TProperty>(TSource instance, TProperty value);
-	public delegate TProperty Get<TSource, TProperty>(TSource instance);
 
 	public class EasyField
 	{
@@ -101,7 +88,14 @@ namespace PropertyHacker
 		public Get Get { get; }
 	}
 
-	// just a generic & type safe wrapper over EasyField
+	public delegate void Set<TSource, TProperty>(TSource instance, TProperty value);
+	public delegate TProperty Get<TSource, TProperty>(TSource instance);
+
+	/// <summary>
+	/// A generic & typesafe wrapper of an <see cref="EasyField"/>
+	/// </summary>
+	/// <typeparam name="TSource">The class to modify</typeparam>
+	/// <typeparam name="TProperty">The type of the property to modify</typeparam>
 	public class EasyField<TSource, TProperty> : EasyField
 	{
 		public EasyField(FieldInfo field) : base(field)
