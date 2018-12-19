@@ -19,7 +19,7 @@ public class ForeignClassModifier
 	{
 		var pr = new Modder();
 
-		if (!pr.TryGet<ForeignClass, string>(e => e.ChangeMe, out var property))
+		if (!Modder.Default.TryGet<ForeignClass, string>(e => e.ChangeMe, out var property))
 		{
 			throw new ArgumentException("Can't modify the property.");
 		}
